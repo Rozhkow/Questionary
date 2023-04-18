@@ -107,7 +107,7 @@ const graph = {
     type: 'radio'
   },
   9: {
-    text: "Question 8",
+    text: "Question 9",
     options: ["Option R", "Option S"],
     conditions: {
       "Option R": 10,
@@ -116,18 +116,21 @@ const graph = {
     type: 'radio'
   },
   10: {
-    text: "Question 8",
+    text: "Question 10",
     options: ["Option R", "Option S"],
     conditions: {
       "Option R": 11,
       "Option S": 11
     },
-    dependencyId: 4,
+    dependency: {
+      id: "4",
+      next: "2"
+    },
     type: 'radio'
   },
   11: {
-    text: "The end",
-    type: 'Default'
+    text: "Thanks for your time!",
+    type: 'submit'
   },
  };
 
@@ -166,20 +169,27 @@ const Questionary = () => {
   const handleNext = () => {
     const currentAnswer = answers[currentQuestionId];
     const isChoose = graph[currentQuestionId].conditions;
+    const dependency = graph[currentQuestionId].dependency;
+    const answerKeys = Object.keys(answers); 
     
     const currentCondition = isChoose 
       ? graph[currentQuestionId].conditions
       : graph[currentQuestionId].next
-
-    setCurrentQuestionId(() => {
-      return isChoose 
-        ? currentCondition[currentAnswer] || 
-          currentCondition[`[${String(currentAnswer)}]`] || 
-          currentCondition['Default'] 
-        : currentCondition
-    });
-
+     
+    if (dependency && answerKeys.includes(dependency.id)) {
+      setCurrentQuestionId(dependency.next)
+    } else {
+      setCurrentQuestionId(() => {
+        return isChoose 
+          ? currentCondition[currentAnswer] || 
+            currentCondition[`[${String(currentAnswer)}]`] || 
+            currentCondition['Default'] 
+          : currentCondition
+      });
+    }
     handleChangedAnswer(currentCondition[currentAnswer]);
+
+    console.log(answers)
   };
 
   const handleChangedAnswer = (currentAnswerId) => {
@@ -188,6 +198,10 @@ const Questionary = () => {
     if (!answerKeys.includes(String(currentAnswerId))) {
       setAnswers(deleteFieldsAfterId(currentQuestionId, answers))
     }
+  }
+
+  const handleSubmit = () => {
+    console.log(answers)
   }
 
   const renderQuestion = () => {
@@ -228,6 +242,16 @@ const Questionary = () => {
             onOptionChange={handleAnswer}
           />
         );
+      case 'submit':
+        return (
+          <>
+            <h2>{question.text}</h2>
+            <Button 
+              color="primary"
+              onClick={handleSubmit}
+            >Submit</Button>
+          </>
+        );
       default:
         return <div>Question not found</div>;
     }
@@ -235,28 +259,28 @@ const Questionary = () => {
 
   return (
     <Card style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <CardHeader title="Questionare" />
-        <CardBody>
-          {renderQuestion()}
-          <div>
-            <Button
-              color="primary"
-              disabled={currentQuestionId === 1} 
-              onClick={handlePrevious}
-            >
-              Previous
-            </Button>
-            
-            <Button 
-              color="primary"
-              disabled={!answers[currentQuestionId]} 
-              onClick={handleNext}
-            >
-              Next
-            </Button>
-          </div>
-        </CardBody>
-      </Card>
+      <CardHeader title="Questionare" />
+      <CardBody>
+        {renderQuestion()}
+        <div>
+          <Button
+            color="primary"
+            disabled={currentQuestionId === 1} 
+            onClick={handlePrevious}
+          >
+            Previous
+          </Button>
+          
+          <Button 
+            color="primary"
+            disabled={!answers[currentQuestionId]} 
+            onClick={handleNext}
+          >
+            Next
+          </Button>
+        </div>
+      </CardBody>
+    </Card>
   );
 
 };
