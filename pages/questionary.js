@@ -12,6 +12,26 @@ import {
 
 import { Button } from '@material-ui/core';
 
+
+// question type TEXT && LONGTEXT
+// {
+//   text: "Question 2",
+//   next: 5,
+//   type: 'text'
+// }
+//
+// question type CHECKBOX
+// {
+//   text: "Question 2",
+//   options: ["Red", "Green", "Blue"],
+//   conditions: {
+//     '[0,1]': 5,
+//     "Default": 6
+//   },
+//   type: 'checkboxes'
+// }
+//
+
 const graph = {
   1: {
     text: "Question 1",
@@ -134,9 +154,19 @@ const Questionary = () => {
 
   const handleNext = () => {
     const currentAnswer = answers[currentQuestionId];
-    const currentCondition = graph[currentQuestionId].conditions;
+    const isChoose = graph[currentQuestionId].conditions;
     
-    setCurrentQuestionId(currentCondition[currentAnswer]);
+    const currentCondition = isChoose 
+      ? graph[currentQuestionId].conditions
+      : graph[currentQuestionId].next
+    
+    setCurrentQuestionId(() => {
+      return isChoose 
+        ? currentCondition[currentAnswer] || 
+          currentCondition[`[${String(currentAnswer)}]`] || 
+          currentCondition['Default'] 
+        : currentCondition
+    });
   };
 
   const renderQuestion = () => {
@@ -187,7 +217,7 @@ const Questionary = () => {
   };
 
   return (
-    <Card>
+    <Card style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
         <CardHeader title="Questionare" />
         <CardBody>
           {renderQuestion()}

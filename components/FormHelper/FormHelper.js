@@ -71,7 +71,10 @@ const LongTextQuestion = ({ question, answer, onAnswerChange }) => {
 const CheckboxQuestion = ({ question, options, selectedOptions, onOptionChange }) => {
   const handleCheckboxChange = (event) => {
     const optionIndex = parseInt(event.target.value);
-    const newSelectedOptions = [...selectedOptions];
+
+    const newSelectedOptions = selectedOptions
+      ? [...selectedOptions]
+      : []
 
     if (event.target.checked) {
       newSelectedOptions.push(optionIndex);
