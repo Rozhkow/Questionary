@@ -45,7 +45,7 @@ const graph = {
   },
   2: {
     text: "Question 2",
-    options: ["Red", "Green", "Blue"],
+    options: ["Red", "Green"],
     conditions: {
       "Red": 5,
       "Green": 6
@@ -90,7 +90,7 @@ const graph = {
   },
   7: {
     text: "Question 7",
-    options: ["Option" , "Option Q"],
+    options: ["Option P" , "Option Q"],
     conditions: {
       "Option P": 11,
       "Option Q": 11
@@ -122,12 +122,27 @@ const graph = {
       "Option R": 11,
       "Option S": 11
     },
+    dependencyId: 4,
     type: 'radio'
   },
   11: {
-    text: "The end"
+    text: "The end",
+    type: 'Default'
   },
  };
+
+const deleteFieldsAfterId = (id, obj) => {
+  const keys = Object.keys(obj);
+  const index = keys.indexOf(String(id));
+  if (index >= 0) {
+    const newKeys = keys.slice(0, index + 1);
+    return newKeys.reduce((acc, key) => {
+      acc[key] = obj[key];
+      return acc;
+    }, {});
+  }
+  return obj;
+}
 
 const Questionary = () => {
   const [currentQuestionId, setCurrentQuestionId] = useState(1);
@@ -139,16 +154,12 @@ const Questionary = () => {
   
   const handlePrevious = () => {
     const answerKeys = Object.keys(answers);
-    if (
-      answerKeys.includes(String(currentQuestionId)) &&
-      answerKeys[answerKeys.length - 1] !== currentQuestionId
-    ) {
-      const questionPosition = answerKeys.indexOf(String(currentQuestionId))
-      if (questionPosition) {
-        setCurrentQuestionId(answerKeys[questionPosition - 1])
-      }
+    const currentAnswerIndex = answerKeys.indexOf(String(currentQuestionId));
+
+    if (currentAnswerIndex > 0) {
+      setCurrentQuestionId(answerKeys[currentAnswerIndex - 1]);
     } else {
-      setCurrentQuestionId(answerKeys.length)
+      setCurrentQuestionId(answerKeys[answerKeys.length - 1]);
     }
   };
 
@@ -159,7 +170,7 @@ const Questionary = () => {
     const currentCondition = isChoose 
       ? graph[currentQuestionId].conditions
       : graph[currentQuestionId].next
-    
+
     setCurrentQuestionId(() => {
       return isChoose 
         ? currentCondition[currentAnswer] || 
@@ -167,20 +178,26 @@ const Questionary = () => {
           currentCondition['Default'] 
         : currentCondition
     });
+
+    handleChangedAnswer(currentCondition[currentAnswer]);
   };
+
+  const handleChangedAnswer = (currentAnswerId) => {
+    const answerKeys = Object.keys(answers);
+
+    if (!answerKeys.includes(String(currentAnswerId))) {
+      setAnswers(deleteFieldsAfterId(currentQuestionId, answers))
+    }
+  }
 
   const renderQuestion = () => {
     const question = graph[currentQuestionId];
-    if (!question) {
-      return <div>Question not found</div>;
-    }
-    const { text, options } = question;
 
     switch (question.type) {
       case 'text':
         return (
           <TextQuestion
-            question={text}
+            question={question.text}
             answer={answers[currentQuestionId]}
             onAnswerChange={handleAnswer}
           />
@@ -188,8 +205,8 @@ const Questionary = () => {
       case 'radio':
         return (
           <RadioQuestion
-            question={text}
-            answers={options}
+            question={question.text}
+            answers={question.options}
             selectedAnswer={answers[currentQuestionId]}
             onAnswerChange={handleAnswer}
           />
@@ -197,7 +214,7 @@ const Questionary = () => {
       case 'longtext':
         return (
           <LongTextQuestion
-            question={text}
+            question={question.text}
             answer={answers[currentQuestionId]}
             onAnswerChange={handleAnswer}
           />
@@ -205,8 +222,8 @@ const Questionary = () => {
       case 'checkboxes':
         return (
           <CheckboxQuestion
-            question={text}
-            options={options}
+            question={question.text}
+            options={question.options}
             selectedOptions={answers[currentQuestionId]}
             onOptionChange={handleAnswer}
           />
