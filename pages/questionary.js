@@ -134,30 +134,44 @@ const graph = {
   },
  };
 
-const deleteFieldsAfterId = (id, obj) => {
-  const keys = Object.keys(obj);
-  const index = keys.indexOf(String(id));
-  if (index >= 0) {
-    const newKeys = keys.slice(0, index + 1);
-    return newKeys.reduce((acc, key) => {
-      acc[key] = obj[key];
-      return acc;
-    }, {});
-  }
-  return obj;
-}
-
 const Questionary = () => {
   const [currentQuestionId, setCurrentQuestionId] = useState(1);
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] = useState([]);
 
   const handleAnswer = (answer) => {
-    setAnswers({ ...answers, [currentQuestionId]: answer });
+    const currentAnswer = getCurrentAnswer();
+    const currentAnswerId = currentAnswer && Object.keys(currentAnswer)[0];
+    const currentAnswerIndex = getCurrentAnswerIndex();
+
+    const isSameAnswerExist = answers.some(obj => Object.values(obj).includes(answer));
+    const isAnswerExist = answers[currentAnswerIndex];
+    const isChoose = graph[currentQuestionId].conditions;
+
+    const currentCondition = isChoose 
+      ? graph[currentQuestionId].conditions
+      : graph[currentQuestionId].next
+    
+    if (!isSameAnswerExist && !isAnswerExist) {
+      setAnswers(oldArr => [...oldArr, { [currentQuestionId]: answer }] )
+    };
+
+    if (isAnswerExist) {
+      setAnswers(oldArr => {
+        return oldArr.map(answerObj => {
+          if (answerObj.hasOwnProperty(currentQuestionId)) {
+            return {[currentQuestionId]: answer};
+          }
+          return answerObj;
+        });
+      });
+    }
+
+    currentAnswer && handleChangedAnswer(currentCondition[currentAnswer[currentAnswerId]]);
   };
   
   const handlePrevious = () => {
-    const answerKeys = Object.keys(answers);
-    const currentAnswerIndex = answerKeys.indexOf(String(currentQuestionId));
+    const answerKeys = getAnswerKeys();
+    const currentAnswerIndex = getCurrentAnswerIndex()
 
     if (currentAnswerIndex > 0) {
       setCurrentQuestionId(answerKeys[currentAnswerIndex - 1]);
@@ -167,11 +181,12 @@ const Questionary = () => {
   };
 
   const handleNext = () => {
-    const currentAnswer = answers[currentQuestionId];
+    const currentAnswer = getCurrentAnswer();
     const isChoose = graph[currentQuestionId].conditions;
     const dependency = graph[currentQuestionId].dependency;
-    const answerKeys = Object.keys(answers); 
-    
+    const answerKeys = getAnswerKeys();
+    const currentAnswerId = getCurrentAnswerKey(currentAnswer);
+
     const currentCondition = isChoose 
       ? graph[currentQuestionId].conditions
       : graph[currentQuestionId].next
@@ -181,22 +196,22 @@ const Questionary = () => {
     } else {
       setCurrentQuestionId(() => {
         return isChoose 
-          ? currentCondition[currentAnswer] || 
-            currentCondition[`[${String(currentAnswer)}]`] || 
+          ? currentCondition[currentAnswer[currentAnswerId]] || 
+            currentCondition[`[${String(currentAnswer[currentAnswerId])}]`] || 
             currentCondition['Default'] 
           : currentCondition
       });
     }
-    handleChangedAnswer(currentCondition[currentAnswer]);
-
-    console.log(answers)
   };
 
   const handleChangedAnswer = (currentAnswerId) => {
-    const answerKeys = Object.keys(answers);
-
-    if (!answerKeys.includes(String(currentAnswerId))) {
-      setAnswers(deleteFieldsAfterId(currentQuestionId, answers))
+    const answerKeys = getAnswerKeys();
+    const currentIndex = getCurrentAnswerIndex();
+     
+    if (answerKeys.includes(String(currentAnswerId))) {
+      const tempAnswersArr = [...answers]
+      tempAnswersArr.splice(currentIndex)
+      setAnswers(tempAnswersArr)
     }
   }
 
@@ -204,6 +219,28 @@ const Questionary = () => {
     console.log(answers)
   }
 
+  const getAnswerKeys = () => {
+    return answers.map(answer => getCurrentAnswerKey(answer))
+  }
+
+  const getCurrentAnswerIndex = () => {
+    const answerKeys = getAnswerKeys();
+    return answerKeys.indexOf(String(currentQuestionId));
+  }
+
+  const getCurrentAnswer = () => {
+    return answers.find(answer => getCurrentAnswerKey(answer) == currentQuestionId)
+  }
+
+  const getCurrentAnswerKey = (answer) => {
+    return Object.keys(answer)[0];
+  }
+
+  const getCurrentAnswerValue = () => {
+    const currentAnswer = getCurrentAnswer();
+    if (currentAnswer) return Object.values(currentAnswer)[0]
+  }
+  
   const renderQuestion = () => {
     const question = graph[currentQuestionId];
 
@@ -212,7 +249,7 @@ const Questionary = () => {
         return (
           <TextQuestion
             question={question.text}
-            answer={answers[currentQuestionId]}
+            answer={getCurrentAnswerValue()}
             onAnswerChange={handleAnswer}
           />
         );
@@ -221,7 +258,7 @@ const Questionary = () => {
           <RadioQuestion
             question={question.text}
             answers={question.options}
-            selectedAnswer={answers[currentQuestionId]}
+            selectedAnswer={getCurrentAnswerValue()}
             onAnswerChange={handleAnswer}
           />
         );
@@ -229,7 +266,7 @@ const Questionary = () => {
         return (
           <LongTextQuestion
             question={question.text}
-            answer={answers[currentQuestionId]}
+            answer={getCurrentAnswerValue()}
             onAnswerChange={handleAnswer}
           />
         );
@@ -238,7 +275,7 @@ const Questionary = () => {
           <CheckboxQuestion
             question={question.text}
             options={question.options}
-            selectedOptions={answers[currentQuestionId]}
+            selectedOptions={getCurrentAnswerValue()}
             onOptionChange={handleAnswer}
           />
         );
@@ -249,7 +286,9 @@ const Questionary = () => {
             <Button 
               color="primary"
               onClick={handleSubmit}
-            >Submit</Button>
+            >
+              Submit
+            </Button>
           </>
         );
       default:
@@ -259,7 +298,6 @@ const Questionary = () => {
 
   return (
     <Card style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-      <CardHeader title="Questionare" />
       <CardBody>
         {renderQuestion()}
         <div>
@@ -273,7 +311,7 @@ const Questionary = () => {
           
           <Button 
             color="primary"
-            disabled={!answers[currentQuestionId]} 
+            disabled={!getCurrentAnswer()} 
             onClick={handleNext}
           >
             Next
