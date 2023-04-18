@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { makeStyles } from "@material-ui/core/styles";
 import Card from "/components/Card/Card.js";
 import CardHeader from "/components/Card/CardHeader.js";
 import CardBody from "/components/Card/CardBody.js";
@@ -9,9 +10,9 @@ import {
   RadioQuestion,
   LongTextQuestion
 } from "../components/FormHelper/FormHelper.js";
-
 import { Button } from '@material-ui/core';
 
+import styles from "/styles/jss/nextjs-material-kit/pages/loginPage.js";
 
 // question type TEXT && LONGTEXT
 // {
@@ -134,7 +135,11 @@ const graph = {
   },
  };
 
+const useStyles = makeStyles(styles);
+
 const Questionary = () => {
+  const classes = useStyles();
+
   const [currentQuestionId, setCurrentQuestionId] = useState(1);
   const [answers, setAnswers] = useState([]);
 
@@ -281,15 +286,20 @@ const Questionary = () => {
         );
       case 'submit':
         return (
-          <>
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            justifyContent: 'space-around' 
+          }}>
             <h2>{question.text}</h2>
             <Button 
-              color="primary"
+              variant="contained"
+              color="orange"
               onClick={handleSubmit}
             >
               Submit
             </Button>
-          </>
+          </div>
         );
       default:
         return <div>Question not found</div>;
@@ -297,28 +307,51 @@ const Questionary = () => {
   };
 
   return (
-    <Card style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-      <CardBody>
-        {renderQuestion()}
-        <div>
-          <Button
-            color="primary"
-            disabled={currentQuestionId === 1} 
-            onClick={handlePrevious}
+    <div
+      className={classes.pageHeader}
+      style={{
+        backgroundImage: "url('/img/kitties.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "top center",
+      }}
+    >
+      <div className={classes.container}>
+        <Card 
+          style={{ minHeight: '300px' }}
+        >
+          <CardBody
+            style={{ flex: 1, display: 'grid' }}
           >
-            Previous
-          </Button>
-          
-          <Button 
-            color="primary"
-            disabled={!getCurrentAnswer()} 
-            onClick={handleNext}
-          >
-            Next
-          </Button>
-        </div>
-      </CardBody>
-    </Card>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+              }}
+            >
+              <Button
+                variant="contained"
+                color="orange"
+                disabled={currentQuestionId === 1} 
+                onClick={handlePrevious}
+              >
+                &#8826;
+              </Button>
+              
+              {renderQuestion()}
+
+              <Button 
+                variant="contained"
+                color="orange"
+                disabled={!getCurrentAnswer()} 
+                onClick={handleNext}
+                >
+                &#8827;
+              </Button>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    </div>
   );
 
 };
